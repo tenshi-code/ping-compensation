@@ -36,6 +36,7 @@ Now scroll down to the bottom of the file and add a new section with the followi
 Enabled=True
 MaxPingCompensationTimeMilliseconds=250
 EnableCustomSkeletalRegionInfo=True
+PlayersAreAlwaysRelevant=True
 HeadDamageModifierMin=11.0
 HeadDamageModifierMax=15.0
 HeadLimpModifierMin=0.0
@@ -106,6 +107,7 @@ Property is the name of the variable you can configure, type is the data type, d
 | Enabled | Boolean (True or False) |  Decides whether the mod is enabled or not  |
 | MaxPingCompensationTimeMilliseconds | Integer (Whole Number) |  Maximum time in milliseconds to compensate the players for. For example setting this to 250 means the players with ping below 250 can take full advantage of this mod but players with ping higher than 250 ms will only be partially compensated up to 250 ms  | Enabled must be true
 | EnableCustomSkeletalRegionInfo | Boolean (True or False) |  If enabled, custom damage and limp modifiers as well as aim error penalty will be applied to the players. I recommend using this for a much more realistic experience on your server.  |   Enabled must be true   |
+| PlayersAreAlwaysRelevant | Boolean (True or False) |  If true, it makes all actors always relevant to the network. This implies that the actor's updates will be replicated to all clients, irrespective of their proximity or visibility to the actor. |   Enabled must be true   |
 | HeadDamageModifierMin | Float (Floating-Point Number) |  Minimum and maximum head damage modifier will be applied as a multiplier randomly between a range of min and max to the final damage dealt on the head of a player  |   EnableCustomSkeletalRegionInfo must be true   |
 | HeadDamageModifierMax | Float (Floating-Point Number) |  Minimum and maximum head damage modifier will be applied as a multiplier randomly between a range of min and max to the final damage dealt on the head of a player  |   EnableCustomSkeletalRegionInfo must be true   |
 | HeadLimpModifierMin | Float (Floating-Point Number) |  Minimum and maximum head limp modifier will be applied randomly between a range of min and max to the currently accumulated limp of a player. When a certain threshold is met, the player starts walking slower, also known as limping  |   EnableCustomSkeletalRegionInfo must be true   |
