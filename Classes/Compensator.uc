@@ -9,6 +9,7 @@ var private bool MsgShown;
 var config int MaxPingCompensationTimeMilliseconds;
 var config bool Enabled;
 var config bool EnableCustomSkeletalRegionInfo;
+var config bool PlayersAreAlwaysRelevant;
 
 var config float HeadDamageModifierMin;
 var config float HeadDamageModifierMax;
@@ -143,10 +144,29 @@ function Tick(float Delta)
                 C_P.PC = PC;
             }
 
-            // Perform additional logic related to skeletal region information, net position, and weapon firing.
+            // Perform logic related to skeletal region information.
             if (EnableCustomSkeletalRegionInfo)
                 CustomSkeletalRegionInfo(C_P.PC.Pawn);
 
+            // What setting an actor (pawn in this case) to bAlwaysRelevant does is that it makes it always be relevant to the network.
+
+            // From now on I will be mentioning actors and clients.
+            // What actor means is a pawn in the game. On the other hand, a client is a controller of the pawn, so basically you as a player.
+
+            // If this boolean flag is set to false, the server does not replicate an actor to a client unless the actor is in the client's field of view or the distance between them is not too great.
+            // This works on a client to client basis, for example if a client sees an actor, the server now replicates the actor to the client but at the same time another client who has not got the actor in their field of view or proximity may not be able to see the actor since the server will not be replicating that actor to the other client.
+
+            // This is used for optimizing network bandwidth by reducing the amount of data sent to clients about distant and out of view actors.
+
+            // However, I believe we are no longer living in 2005 when network bandwidth used to be an issue, so now setting bAlwaysRelevant to false only has drawbacks and no benefits.
+            // One of the gamebreaking drawbacks is that you do not hear the other players approaching you at all since they were not being replicated to you while they were out of view or out of range, the server only starts replicating them to you once they are already in the same room as you.
+            // Not only can you not hear them approaching but also it's like one moment you look and nobody is there and the next moment suddenly there is a player standing there, already firing at you. I like to call this "teleporting players".
+
+            // Now let's see what happens when bAlwaysRelevant is set to true. When it's set to true, it means that the actor is always relevant to the network. This implies that the actor's updates will be replicated to all clients, irrespective of their proximity or visibility to the actor. This ensures that the server will always keep you updated about the position of all actors present in the game, thus there will be no "teleporting players".
+            if (PlayersAreAlwaysRelevant)
+                C_P.PC.Pawn.bAlwaysRelevant = true;
+
+            // Perform additional logic related to net position and weapon firing.
             SaveNetPosition(C_P);
             CheckIfWeaponHasFired(C_P);
         }
@@ -820,6 +840,7 @@ defaultproperties
     MaxPingCompensationTimeMilliseconds=250
     Enabled=true
     EnableCustomSkeletalRegionInfo=true
+    PlayersAreAlwaysRelevant=true
 
     HeadDamageModifierMin=11.0
     HeadDamageModifierMax=15.0
