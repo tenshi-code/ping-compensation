@@ -1,6 +1,8 @@
 # Server-sided Networked Ballistics with Ping Compensation
 This is a SWAT 4 mod that works completely on the server-side. This is for server owners only and players are not required and should **not** download this mod.
 
+[Video demo here](https://www.youtube.com/watch?v=1gFx_9Vhm1U)
+
 The mod employs a sophisticated ping compensation system to eliminate the impact of network latency on player interactions. By adjusting player positions based on network conditions, the mod aims to provide a smoother and more responsive experience.
 
 The mod also overhauls the ballistics system and overrides the skeletal region information of player pawns to custom configurable values.
