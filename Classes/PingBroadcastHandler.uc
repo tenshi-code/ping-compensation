@@ -1,7 +1,8 @@
 class PingBroadcastHandler extends Engine.BroadcastHandler;
 
 var Engine.BroadcastHandler OriginalHandler;
-var Compensator Compensator;
+var config bool WarnPlayersDeadChat;
+var config bool ForwardSpecPlayersChatToAlivePlayers;
 
 public function Broadcast(Actor Sender, coerce string Msg, optional name Type)
 {
@@ -48,6 +49,7 @@ public function Broadcast(Actor Sender, coerce string Msg, optional name Type)
 public function BroadcastTeam(Controller Sender, coerce string Msg, optional name Type)
 {
     local CompensatedPlayer C_P;
+    local PlayerController P;
 
     if (Msg ~= "!PingFeedback" || Msg ~= "!PingHitF" || Msg ~= "!RealPing" || Msg ~= "!ActualPing" || Msg ~= "!TruePing" || Msg ~= "!ExactPing")
     {
@@ -81,6 +83,21 @@ public function BroadcastTeam(Controller Sender, coerce string Msg, optional nam
         return;
     }
 
+    if (ForwardSpecPlayersChatToAlivePlayers && Sender.IsInState('BaseSpectating'))
+    {
+        foreach DynamicActors(class'PlayerController', P)
+        {
+            if (P == Sender)
+                continue;
+
+            if (P.IsInState('Dead') || P.IsInState('ObserveTeam') || P.IsInState('ObserveLocation') || P.IsInState('BaseSpectating'))
+                continue;
+
+            Level.Game.BroadcastHandler.BroadcastText(none, P, "[c=808080][b]"$Sender.PlayerReplicationInfo.PlayerName$"[\\b]:"@Msg, 'Caption');
+            SwatGamePlayerController(P).ClientReliablePlaySound(Sound(DynamicLoadObject("SW_meta.ui_TeamSay1", class'Sound', false)));
+        }
+    }
+
     OriginalHandler.BroadcastTeam(Sender, Msg, Type);
 }
 
@@ -91,6 +108,15 @@ public function UpdateSentText()
 
 public function bool AllowsBroadcast(Actor Broadcaster, int Len)
 {
+    local PlayerController P;
+
+    if (WarnPlayersDeadChat)
+    {
+        P = PlayerController(Broadcaster);
+
+        if (P != None && (P.IsInState('Dead') || P.IsInState('ObserveTeam') || P.IsInState('ObserveLocation')))
+            Level.Game.BroadcastHandler.BroadcastText(none, P, "[C=FFFFFF]You are dead! Your team chat messages cannot be seen by your teammates.", 'Caption');
+    }
     return OriginalHandler.AllowsBroadcast(Broadcaster, Len);
 }
 
@@ -101,4 +127,10 @@ event Destroyed()
     OriginalHandler = None;
 
     Super.Destroyed();
+}
+
+defaultproperties
+{
+    WarnPlayersDeadChat=true
+    ForwardSpecPlayersChatToAlivePlayers=true
 }
