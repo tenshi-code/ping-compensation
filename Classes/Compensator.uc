@@ -56,9 +56,13 @@ var config float RightLegAimErrorPenaltyMax;
 var config float NoHelmetHeadHitDamageMultiplier;
 var config float GlobalDamageMultiplier;
 
-// WeaponsOptedOut should be Fired Weapons that should NOT deal any damage, such as taser, less lethal and pepper spray.
-// Also Cobra stun gun in TSS.
-var config array<name> WeaponsOptedOut;
+// WeaponsOptedOut should only be weapons which do not deal damage: Taser, Stingray, LessLethalSG, PepperSpray, CSBallLauncher and HK69GrenadeLauncher.
+// Why do they need to be excluded from this mod? Suppose that someone fires a taser, we can't take back the already fired shot unlike the weapons that deals damage where we can just disable their innate damage and apply damage manually in this mod.
+// So in the example of the taser, first the taser would fire its shot from the native class in the game and then fire another shot with this mod, that's one too many shots, they can possibly hit two players at the same time. The same goes for LL Shotgun, Pepper Spray and the rest.
+
+// Previously WeaponsOptedOut was made as a config variable but after some consideration I have decided there is no reason for anyone to change this...
+// ...unless you're adapting this mod for use in non-vanilla swat 4, in which case you should modify the code directly and include any weapons which should be opted out of this mod.
+var protected array<name> WeaponsOptedOut;
 
 var Timer MsgShownResetTimer;
 
@@ -76,7 +80,13 @@ function BeginPlay()
     {
         GameInfo.GameEvents.MissionStarted.Register(self);
     }
-    return;
+
+    WeaponsOptedOut[0] = 'Taser';
+    WeaponsOptedOut[1] = 'Stingray';
+    WeaponsOptedOut[2] = 'LessLethalSG';
+    WeaponsOptedOut[3] = 'PepperSpray';
+    WeaponsOptedOut[4] = 'CSBallLauncher';
+    WeaponsOptedOut[5] = 'HK69GrenadeLauncher';
 }
 
 // PostBeginPlay initializes PingBroadcastHandler if Enabled.
@@ -137,7 +147,7 @@ function Tick(float Delta)
             if (PC.Pawn == None || PC.Pawn.IsDead() || PC.Pawn.IsIncapacitated())
                 continue;
 
-            // Check if the player is already compensated, spawn CompensatedPlayer if not.
+            // Check if this player already has a CompensatedPlayer class, spawn it if not.
             if (!IsThisPlayerCompensatedFor(PC, C_P))
             {
                 C_P = Spawn(class'CompensatedPlayer');
@@ -720,8 +730,8 @@ function CompensatePlayerForPing(CompensatedPlayer Victim, CompensatedPlayer Sho
     Victim.PingCompensation.CompensationLocation.Y = InterpCurveEval(Victim.PingCompensation.LocY, CompensationTime);
     Victim.PingCompensation.CompensationLocation.Z = InterpCurveEval(Victim.PingCompensation.LocZ, CompensationTime);
 
-    // Check if the aim direction of the victim is within an acceptable threshold.
-    if(Vector(NetPlayer(Shooter.PC.Pawn).GetAimRotation()) Dot Normal(Victim.PingCompensation.CompensationLocation - Shooter.PC.Pawn.GetThirdPersonEyesLocation()) < 0.96)
+    // Check if the aim direction of the shooter is within an acceptable threshold.
+    if(Vector(NetPlayer(Shooter.PC.Pawn).GetAimRotation()) Dot Normal(Victim.PingCompensation.CompensationLocation - Shooter.PC.Pawn.GetThirdPersonEyesLocation()) - (0.00004 * VDist(Victim.PingCompensation.CompensationLocation, Shooter.PC.Pawn.GetThirdPersonEyesLocation())) > 0.9)
     {
         return;
     }
@@ -837,7 +847,7 @@ event Destroyed()
 
 defaultproperties
 {
-    MaxPingCompensationTimeMilliseconds=250
+    MaxPingCompensationTimeMilliseconds=300
     Enabled=true
     EnableCustomSkeletalRegionInfo=true
     PlayersAreAlwaysRelevant=true
@@ -886,8 +896,4 @@ defaultproperties
 
     NoHelmetHeadHitDamageMultiplier=2.0
     GlobalDamageMultiplier=1.0
-
-    WeaponsOptedOut(0)='Taser'
-    WeaponsOptedOut(1)='PepperSpray'
-    WeaponsOptedOut(2)='LessLethalSG'
 }
