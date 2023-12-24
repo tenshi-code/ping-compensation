@@ -29,7 +29,7 @@ Once you have the .u package, place it in Content/System (or ContentExpansion/Sy
 
 Open up Swat4DedicatedServer.ini (or Swat4XDedicatedServer.ini) with any text editor. Scroll down until you find the `[Engine.GameEngine]` section and add a new entry into it: `ServerActors=PingCompensation.Compensator`
 
-Now scroll down to the bottom of the file and add a new section with the following configuration:
+Now scroll down to the bottom of the file and add these new sections with the following configuration:
 
 ```
 [PingCompensation.Compensator]
@@ -75,6 +75,10 @@ RightLegAimErrorPenaltyMin=3.0
 RightLegAimErrorPenaltyMax=3.5
 NoHelmetHeadHitDamageMultiplier=2.0
 GlobalDamageMultiplier=1.0
+
+[PingCompensation.PingBroadcastHandler]
+WarnPlayersDeadChat=True
+ForwardSpecPlayersChatToAlivePlayers=True
 ```
 
 The configuration provided is the recommended default but you are free to customize any options as you see fit. You will learn more about what each of the setting does in the [Configurable Options](#configuration-options) section below.
@@ -141,6 +145,8 @@ Property is the name of the variable you can configure, type is the data type, d
 | RightLegAimErrorPenaltyMax | Float (Floating-Point Number) |  Minimum and maximum right leg aim error penalty which will be added randomly between a range of min and max to the current aim error penalty, causing the player's crosshair to widen and making it harder to connect the shots  |   EnableCustomSkeletalRegionInfo must be true   |
 | NoHelmetHeadHitDamageMultiplier | Float (Floating-Point Number) |  This is a damage multiplier which will apply to a player only when the player is shot in the head and the player is not wearing a helmet (such as wearing gas mask or no head gear at all for some reason). In this case you can have extra damage dealt to a player as a penalty for not wearing a helmet for stronger protection on the head  |  Enabled must be true  |
 | GlobalDamageMultiplier | Float (Floating-Point Number) |  This is a damage multiplier which applies globally to the overall damage. Suppose that you shoot a player and deal 30 damage, with this multiplier at a value of 2.0 you will now deal 60 damage   |  Enabled must be true  |
+| WarnPlayersDeadChat | Boolean (True or False) |  When a dead player tries to send team message, they are presented with a warning by the server, letting them know their teammates cannot see their message   |  Enabled must be true  |
+| ForwardSpecPlayersChatToAlivePlayers | Boolean (True or False) |  When a player who is in spectating mode (not viewing mode) sends a team message, the server forwards that message to all of the alive players in their team   |  Enabled must be true  |
 
 ## Limitations
 There is no ping compensation for leaning, compensation applies to movement only.
