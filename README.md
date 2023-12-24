@@ -23,7 +23,7 @@ Programmers and modders should read the source code to understand the technicali
 This system completely disregards the original logic behind ballistics, tracing and damage and uses a server-side approach to accomplish it all and fairly do damage to the players when applicable.
 
 ## Installation
-Download the .u compiled package from the releases section or download the source code and compile it yourself.
+Download the .u compiled package from the [Releases Section](https://github.com/tenshi-code/ping-compensation/releases/download/v1.0.2/PingCompensation.u) or download the [Source Code](https://github.com/tenshi-code/ping-compensation/tree/main/Classes) and compile it yourself.
 
 Once you have the .u package, place it in Content/System (or ContentExpansion/System for SWAT 4: TSS) folder of your SWAT 4 installation.
 
@@ -34,7 +34,7 @@ Now scroll down to the bottom of the file and add a new section with the followi
 ```
 [PingCompensation.Compensator]
 Enabled=True
-MaxPingCompensationTimeMilliseconds=250
+MaxPingCompensationTimeMilliseconds=300
 EnableCustomSkeletalRegionInfo=True
 PlayersAreAlwaysRelevant=True
 HeadDamageModifierMin=11.0
@@ -75,14 +75,9 @@ RightLegAimErrorPenaltyMin=3.0
 RightLegAimErrorPenaltyMax=3.5
 NoHelmetHeadHitDamageMultiplier=2.0
 GlobalDamageMultiplier=1.0
-WeaponsOptedOut=Taser
-WeaponsOptedOut=PepperSpray
-WeaponsOptedOut=LessLethalSG
 ```
 
-> If you are adding this mod to TSS, you should also add `WeaponsOptedOut=Stingray` and `WeaponsOptedOut=HK69GrenadeLauncher`
-
-The configuration provided is the recommended default but you are free to customize any options as you see fit. You will learn more about what each of the setting does in the Configurable Options section below.
+The configuration provided is the recommended default but you are free to customize any options as you see fit. You will learn more about what each of the setting does in the [Configurable Options](#configuration-options) section below.
 
 ## Compatibility
 Tested in v1.0 but should work fine in v1.1 and TSS, also works great alongside server administration mods such as admin mod or the Julia framework by sergeii.
@@ -96,8 +91,8 @@ There are alternative commands available which can be used to invoke the same co
 
 | Command | Alternatives | Description |
 | ----------- | ----------- | ----------- |
-| @PingHitFeedback | @PingHitF |  Toggle feedback on or off for damage dealt during ping-compensated encounters, providing information on successful hits and their impact on opponents  |
-| @RealPing | @ActualPing   @TruePing   @ExactPing |  Get your actual ping to the server, the ping shown on the scoreboard is completely false!  |
+| !PingHitFeedback | !PingHitF |  Toggle feedback on or off for damage dealt during ping-compensated encounters, providing information on successful hits and their impact on opponents  |
+| !RealPing | !ActualPing   !TruePing   !ExactPing |  Get your actual ping to the server, the ping shown on the scoreboard is inaccurate!  |
 
 ## Configuration Options
 Property is the name of the variable you can configure, type is the data type, description provides information and condition is dependency on another property for a given property to work.
@@ -146,7 +141,7 @@ Property is the name of the variable you can configure, type is the data type, d
 | RightLegAimErrorPenaltyMax | Float (Floating-Point Number) |  Minimum and maximum right leg aim error penalty which will be added randomly between a range of min and max to the current aim error penalty, causing the player's crosshair to widen and making it harder to connect the shots  |   EnableCustomSkeletalRegionInfo must be true   |
 | NoHelmetHeadHitDamageMultiplier | Float (Floating-Point Number) |  This is a damage multiplier which will apply to a player only when the player is shot in the head and the player is not wearing a helmet (such as wearing gas mask or no head gear at all for some reason). In this case you can have extra damage dealt to a player as a penalty for not wearing a helmet for stronger protection on the head  |  Enabled must be true  |
 | GlobalDamageMultiplier | Float (Floating-Point Number) |  This is a damage multiplier which applies globally to the overall damage. Suppose that you shoot a player and deal 30 damage, with this multiplier at a value of 2.0 you will now deal 60 damage   |  Enabled must be true  |
-| WeaponsOptedOut | Array of Names |  A list of weapon names onto which the ping compensation will not apply. This list must only include Fired Weapons (Fired Weapons are any weapons that are fired, including pepper spray but not throwables like sting grenade) which are not meant to do any damage to the players such as Taser, Less Lethal Shotgun, Pepper Spray  |  Enabled must be true  |
 
 ## Limitations
 There is no ping compensation for leaning, compensation applies to movement only.
+Compensation also does not apply to the following equipment items: Taser Stun Gun, Cobra Stun Gun, Less Lethal Shotgun, Pepper Spray, Pepper-ball Gun and 40mm Grenade Launcher.
