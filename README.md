@@ -144,4 +144,5 @@ Property is the name of the variable you can configure, type is the data type, d
 
 ## Limitations
 There is no ping compensation for leaning, compensation applies to movement only.
+
 Compensation also does not apply to the following equipment items: Taser Stun Gun, Cobra Stun Gun, Less Lethal Shotgun, Pepper Spray, Pepper-ball Gun and 40mm Grenade Launcher.
