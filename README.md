@@ -23,7 +23,7 @@ Programmers and modders should read the source code to understand the technicali
 This system completely disregards the original logic behind ballistics, tracing and damage and uses a server-side approach to accomplish it all and fairly do damage to the players when applicable.
 
 ## Installation
-Download the .u compiled package from the [Releases Section](https://github.com/tenshi-code/ping-compensation/releases/download/v1.0.2/PingCompensation.u) or download the [Source Code](https://github.com/tenshi-code/ping-compensation/tree/main/Classes) and compile it yourself.
+Download the .u compiled package from the [Releases Section](https://github.com/tenshi-code/ping-compensation/releases/download/v1.0.3/PingCompensation.u) or download the [Source Code](https://github.com/tenshi-code/ping-compensation/tree/main/Classes) and compile it yourself.
 
 Once you have the .u package, place it in Content/System (or ContentExpansion/System for SWAT 4: TSS) folder of your SWAT 4 installation.
 
