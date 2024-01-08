@@ -357,6 +357,10 @@ function CheckIfWeaponHasFired(CompensatedPlayer C_P)
     if (CurrentWeapon.MuzzleVelocity == CurrentWeapon.Default.MuzzleVelocity)
         CurrentWeapon.MuzzleVelocity *= 0.0;
 
+    // Disable internal damage of JHP ammo
+    if (CurrentWeapon.Ammo.IsA('JacketedHollowPoint'))
+        CurrentWeapon.Ammo.InternalDamage = 0;
+
     // Check if there is a change in ammo or weapon slot since the last update.
     // If true, update the ping compensation information.
     if(C_P.PingCompensation.Ammo != 0 && C_P.PingCompensation.Ammo > CurrentWeapon.Ammo.RoundsRemainingBeforeReload() && C_P.PingCompensation.WeaponSlot == CurrentWeapon.GetSlot())
@@ -711,6 +715,8 @@ function float GetRegionBasedMomentumToPenetrate(ESkeletalRegion Region, Protect
 
 function CompensatePlayerForPing(CompensatedPlayer Victim, CompensatedPlayer Shooter)
 {
+	local Rotator DummyPawnRot;
+	local NetPlayer DummyPawn;
     local Range CompensationTimeRange;
     local float CompensationTime;
     local float ExactPing;
@@ -730,21 +736,112 @@ function CompensatePlayerForPing(CompensatedPlayer Victim, CompensatedPlayer Sho
     Victim.PingCompensation.CompensationLocation.Y = InterpCurveEval(Victim.PingCompensation.LocY, CompensationTime);
     Victim.PingCompensation.CompensationLocation.Z = InterpCurveEval(Victim.PingCompensation.LocZ, CompensationTime);
 
-    // Check if the aim direction of the shooter is within an acceptable threshold.
-    if(Vector(NetPlayer(Shooter.PC.Pawn).GetAimRotation()) Dot Normal(Victim.PingCompensation.CompensationLocation - Shooter.PC.Pawn.GetThirdPersonEyesLocation()) - (0.00004 * VDist(Victim.PingCompensation.CompensationLocation, Shooter.PC.Pawn.GetThirdPersonEyesLocation())) > 0.9)
-    {
+    // If the player hasn't moved, don't continue - may fix the issue some people are experiencing with shooting static targets who haven't moved
+    if (VDist(Victim.PC.Pawn.Location, Victim.PingCompensation.CompensationLocation) < float(1))
         return;
+
+    // Spawn a dummy pawn at the compensated location
+    DummyPawnRot = Victim.PC.ViewTarget.Rotation;
+    DummyPawn = Spawn(class'NetPlayer',,, Victim.PingCompensation.CompensationLocation, DummyPawnRot, true);
+    DummyPawn.bBlockActors = false;
+	DummyPawn.bBlockPlayers = false;
+    DummyPawn.bCollideWorld = false;
+    DummyPawn.bHidden = true;
+	DummyPawn.RemoteRole = ROLE_None;
+	DummyPawn.bAlwaysRelevant = false;
+
+    // Trace bones from shooter to dummy pawn to determine if the victim was being seen by the shooter at the time of firing
+    if(
+        FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_HEADNUB').Origin, DummyPawn.GetBoneCoords('BIP01_HEADNUB').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_HEADNUB').Origin, DummyPawn.GetBoneCoords('BIP01_R_FOREARM').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_HEADNUB').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOREARM').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_HEADNUB').Origin, DummyPawn.GetBoneCoords('BIP01_R_HAND').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_HEADNUB').Origin, DummyPawn.GetBoneCoords('BIP01_L_HAND').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_HEADNUB').Origin, DummyPawn.GetBoneCoords('BIP01_SPINE2').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_HEADNUB').Origin, DummyPawn.GetBoneCoords('GRIPBELT2').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_HEADNUB').Origin, DummyPawn.GetBoneCoords('BIP01_R_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_HEADNUB').Origin, DummyPawn.GetBoneCoords('BIP01_L_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_HEADNUB').Origin, DummyPawn.GetBoneCoords('BIP01_R_FOOT').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_HEADNUB').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOOT').Origin)
+        
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_R_FOREARM').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOREARM').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_R_HAND').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_L_HAND').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_SPINE2').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_FOREARM').Origin, DummyPawn.GetBoneCoords('GRIPBELT2').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_R_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_L_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_R_FOOT').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOOT').Origin)
+        
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOREARM').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_R_HAND').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_L_HAND').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_SPINE2').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_FOREARM').Origin, DummyPawn.GetBoneCoords('GRIPBELT2').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_R_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_L_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_R_FOOT').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_FOREARM').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOOT').Origin)
+        
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_HAND').Origin, DummyPawn.GetBoneCoords('BIP01_R_HAND').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_HAND').Origin, DummyPawn.GetBoneCoords('BIP01_L_HAND').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_HAND').Origin, DummyPawn.GetBoneCoords('BIP01_SPINE2').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_HAND').Origin, DummyPawn.GetBoneCoords('GRIPBELT2').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_HAND').Origin, DummyPawn.GetBoneCoords('BIP01_R_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_HAND').Origin, DummyPawn.GetBoneCoords('BIP01_L_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_HAND').Origin, DummyPawn.GetBoneCoords('BIP01_R_FOOT').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_HAND').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOOT').Origin)
+        
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_HAND').Origin, DummyPawn.GetBoneCoords('BIP01_L_HAND').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_HAND').Origin, DummyPawn.GetBoneCoords('BIP01_SPINE2').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_HAND').Origin, DummyPawn.GetBoneCoords('GRIPBELT2').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_HAND').Origin, DummyPawn.GetBoneCoords('BIP01_R_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_HAND').Origin, DummyPawn.GetBoneCoords('BIP01_L_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_HAND').Origin, DummyPawn.GetBoneCoords('BIP01_R_FOOT').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_HAND').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOOT').Origin)
+        
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_SPINE2').Origin, DummyPawn.GetBoneCoords('BIP01_SPINE2').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_SPINE2').Origin, DummyPawn.GetBoneCoords('GRIPBELT2').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_SPINE2').Origin, DummyPawn.GetBoneCoords('BIP01_R_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_SPINE2').Origin, DummyPawn.GetBoneCoords('BIP01_L_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_SPINE2').Origin, DummyPawn.GetBoneCoords('BIP01_R_FOOT').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_SPINE2').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOOT').Origin)
+        
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('GRIPBELT2').Origin, DummyPawn.GetBoneCoords('GRIPBELT2').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('GRIPBELT2').Origin, DummyPawn.GetBoneCoords('BIP01_R_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('GRIPBELT2').Origin, DummyPawn.GetBoneCoords('BIP01_L_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('GRIPBELT2').Origin, DummyPawn.GetBoneCoords('BIP01_R_FOOT').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('GRIPBELT2').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOOT').Origin)
+        
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_CALF').Origin, DummyPawn.GetBoneCoords('BIP01_R_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_CALF').Origin, DummyPawn.GetBoneCoords('BIP01_L_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_CALF').Origin, DummyPawn.GetBoneCoords('BIP01_R_FOOT').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_CALF').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOOT').Origin)
+        
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_CALF').Origin, DummyPawn.GetBoneCoords('BIP01_L_CALF').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_CALF').Origin, DummyPawn.GetBoneCoords('BIP01_R_FOOT').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_CALF').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOOT').Origin)
+        
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_FOOT').Origin, DummyPawn.GetBoneCoords('BIP01_R_FOOT').Origin)
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_R_FOOT').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOOT').Origin)
+        
+        || FastTrace(Shooter.PC.Pawn.GetBoneCoords('BIP01_L_FOOT').Origin, DummyPawn.GetBoneCoords('BIP01_L_FOOT').Origin))
+    {
+        // Check if the player can set the compensated location and update the player's location accordingly.
+        if(Victim.PC.Pawn.CanSetLocation(Victim.PingCompensation.CompensationLocation))
+        {
+            // Save the current location, temporarily disable collision, set the compensated location, and re-enable collision.
+            Victim.PingCompensation.SavedLocation = Victim.PC.Pawn.Location;
+            Victim.PC.Pawn.bCollideWorld = False;
+            Victim.PC.Pawn.SetLocation(Victim.PingCompensation.CompensationLocation);
+            Victim.PC.Pawn.bCollideWorld = True;
+        }
     }
 
-    // Check if the player can set the compensated location and update the player's location accordingly.
-    if(Victim.PC.Pawn.CanSetLocation(Victim.PingCompensation.CompensationLocation))
-    {
-        // Save the current location, temporarily disable collision, set the compensated location, and re-enable collision.
-        Victim.PingCompensation.SavedLocation = Victim.PC.Pawn.Location;
-        Victim.PC.Pawn.bCollideWorld = False;
-        Victim.PC.Pawn.SetLocation(Victim.PingCompensation.CompensationLocation);
-        Victim.PC.Pawn.bCollideWorld = True;
-    }
+    // Get rid of dummy pawn now
+    DummyPawn.Destroy();
 }
 
 // DecompensatePlayerForPing function reverses the player's location adjustment made during ping compensation.
@@ -866,29 +963,29 @@ defaultproperties
     TorsoAimErrorPenaltyMin=0.5
     TorsoAimErrorPenaltyMax=0.5
 
-    LeftArmDamageModifierMin=1.4
-    LeftArmDamageModifierMax=1.7
+    LeftArmDamageModifierMin=1.68
+    LeftArmDamageModifierMax=2.04
     LeftArmLimpModifierMin=0.0
     LeftArmLimpModifierMax=0.0
     LeftArmAimErrorPenaltyMin=1.0
     LeftArmAimErrorPenaltyMax=1.0
 
-    RightArmDamageModifierMin=1.4
-    RightArmDamageModifierMax=1.7
+    RightArmDamageModifierMin=1.68
+    RightArmDamageModifierMax=2.04
     RightArmLimpModifierMin=0.0
     RightArmLimpModifierMax=0.0
     RightArmAimErrorPenaltyMin=2.0
     RightArmAimErrorPenaltyMax=2.0
 
-    LeftLegDamageModifierMin=1.1
-    LeftLegDamageModifierMax=1.3
+    LeftLegDamageModifierMin=1.32
+    LeftLegDamageModifierMax=1.56
     LeftLegLimpModifierMin=0.9
     LeftLegLimpModifierMax=1.1
     LeftLegAimErrorPenaltyMin=3.0
     LeftLegAimErrorPenaltyMax=3.5
 
-    RightLegDamageModifierMin=1.1
-    RightLegDamageModifierMax=1.3
+    RightLegDamageModifierMin=1.32
+    RightLegDamageModifierMax=1.56
     RightLegLimpModifierMin=0.9
     RightLegLimpModifierMax=1.1
     RightLegAimErrorPenaltyMin=3.0
